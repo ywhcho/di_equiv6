@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}의약정보 시스템{% endblock %}</title>
+  <style>
+    /* ── 공통 레이아웃 ── */
+    body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
+
+    /* ── 상단 네비게이션 바 ── */
+    nav.topnav {
+      background: #212529;
+      display: flex; align-items: stretch; flex-wrap: wrap;
+      padding: 0 20px; min-height: 52px;
+    }
+    .nav-brand {
+      color: #fff; font-size: 15px; font-weight: 700; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 18px 0 0; margin-right: 6px; white-space: nowrap;
+      letter-spacing: -0.3px; border-right: 1px solid rgba(255,255,255,.12);
+    }
+    .nav-brand:hover { color: #90c4ff; }
+    .nav-menu {
+      display: flex; align-items: stretch; flex: 1; flex-wrap: wrap;
+    }
+    .nav-right {
+      display: flex; align-items: center; gap: 0; margin-left: auto;
+    }
+    .nav-link {
+      color: #adb5bd; text-decoration: none; font-size: 13.5px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 0 14px; white-space: nowrap;
+      border-bottom: 3px solid transparent; border-top: 3px solid transparent;
+      transition: color .15s, border-bottom-color .15s;
+    }
+    .nav-link:hover { color: #fff; border-bottom-color: rgba(255,255,255,.3); }
+    .nav-link.active { color: #fff; border-bottom-color: #0d6efd; font-weight: 600; }
+    .nav-link.disabled { color: #495057; cursor: default; pointer-events: none; }
+    .nav-link .ni { font-style: normal; font-size: 14px; }
+    .nav-divider {
+      width: 1px; background: rgba(255,255,255,.1); margin: 10px 4px;
+    }
+    /* 로그인/로그아웃 */
+    .nav-auth-btn {
+      background: none; border: 1px solid rgba(255,255,255,.2); color: #adb5bd;
+      font-size: 13px; font-family: 'Malgun Gothic', sans-serif; cursor: pointer;
+      border-radius: 6px; padding: 5px 14px; margin: auto 0 auto 4px;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: background .15s, color .15s;
+    }
+    .nav-auth-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+    /* ── 컨텐츠 영역 ── */
+    .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+    h2 { color: #343a40; border-bottom: 2px solid #007bff; padding-bottom: 6px; }
+    h3 { color: #495057; }
+    table { width: 100%; border-collapse: collapse; background: #fff; margin-bottom: 20px; }
+    th { background: #007bff; color: #fff; padding: 8px 10px; text-align: left; font-size: 13px; }
+    td { padding: 7px 10px; border-bottom: 1px solid #dee2e6; font-size: 13px; }
+    tr.clickable-row:hover td { background: #e9f3ff; cursor: pointer; }
+    tr.selected td { background: #cce0ff; }
+    .pagination { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 20px; }
+    .pagination a, .pagination span {
+      padding: 5px 10px; border: 1px solid #dee2e6; border-radius: 4px;
+      text-decoration: none; font-size: 13px; color: #007bff;
+    }
+    .pagination span.current { background: #007bff; color: #fff; border-color: #007bff; }
+    .pagination a:hover { background: #e9f3ff; }
+    .search-box { background: #fff; padding: 20px; border-radius: 6px;
+                  box-shadow: 0 1px 4px rgba(0,0,0,.1); margin-bottom: 20px; }
+    .search-box select, .search-box input[type=text] {
+      padding: 7px 10px; border: 1px solid #ced4da; border-radius: 4px;
+      font-size: 14px; margin-right: 8px;
+    }
+    .search-box input[type=text] { width: 280px; }
+    .search-box button {
+      padding: 7px 18px; background: #007bff; color: #fff; border: none;
+      border-radius: 4px; font-size: 14px; cursor: pointer;
+    }
+    .search-box button:hover { background: #0056b3; }
+    .table-section { background: #fff; padding: 15px; border-radius: 6px;
+                     box-shadow: 0 1px 4px rgba(0,0,0,.1); margin-bottom: 24px; }
+    .badge { display: inline-block; padding: 2px 8px; background: #007bff;
+             color: #fff; border-radius: 10px; font-size: 12px; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="topnav">
+    <a href="{% url 'home' %}" class="nav-brand">
+      <i class="ni" aria-hidden="true">💊</i>의약정보 시스템
+    </a>
+    <div class="nav-menu">
+      <a href="{% url 'home' %}#system-menu" class="nav-link disabled">
+        <i class="ni" aria-hidden="true">⧉</i>중복성분보기
+      </a>
+      <a href="{% url 'equiv_ingr:search' %}" class="nav-link">
+        <i class="ni" aria-hidden="true">🧪</i>동일성분찾기
+      </a>
+      <a href="{% url 'equiv_htname:search' %}" class="nav-link">
+        <i class="ni" aria-hidden="true">🔍</i>의약정보검색
+      </a>
+      <div class="nav-divider"></div>
+      <a href="{% url 'board' %}" class="nav-link">
+        <i class="ni" aria-hidden="true">🗒️</i>게시판
+      </a>
+      <a href="{% url 'about' %}" class="nav-link">
+        <i class="ni" aria-hidden="true">💬</i>About Us
+      </a>
+    </div>
+    <div class="nav-right">
+      {% if user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="nav-auth-btn">
+            <i class="ni" aria-hidden="true">↩</i>로그아웃
+          </button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}" class="nav-link">
+          <i class="ni" aria-hidden="true">🔑</i>로그인
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>

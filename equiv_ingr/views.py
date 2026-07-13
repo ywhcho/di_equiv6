@@ -1,0 +1,139 @@
+from urllib.parse import urlencode
+
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.shortcuts import render
+from decimal import Decimal, InvalidOperation
+from django.db.models import IntegerField, Sum, Value
+from django.db.models.functions import Cast, Coalesce, Replace
+
+from .models import MedInteractionMfname, MedicinesDruginfo, MedicinesMedicine
+
+PAGE_SIZE = 10
+
+
+def _format_amount(value):
+    text = str(value or '').strip()
+    if not text:
+        return ''
+    normalized = text.replace(',', '')
+    try:
+        return f"{int(Decimal(normalized)):,}"
+    except (InvalidOperation, ValueError):
+        return text
+
+
+def _get_table1_queryset(query_type, query_val):
+    filter_map = {
+        'ingr_t': 'ingr_t__icontains',
+        'kingr_t': 'kingr_t__icontains',
+        'cfno': 'cfno__icontains',
+        'wfco': 'wfco__icontains',
+        'ATC': 'ATC__istartswith',
+    }
+    lookup = filter_map.get(query_type)
+    if not lookup:
+        return MedInteractionMfname.objects.none()
+
+    return MedInteractionMfname.objects.filter(**{lookup: query_val}).order_by('wfco', 'id')
+
+
+def _get_table2_base_queryset(wfco_full):
+    return MedicinesMedicine.objects.filter(wfco=wfco_full).annotate(
+        ypri24_num=Cast(Replace('ypri24', Value(','), Value('')), IntegerField())
+    )
+
+
+def _get_table2_queryset(wfco_full, sort2):
+    sort_map = {
+        'htname': ('htname', 'id'),
+        'company': ('company', 'id'),
+        'ypri24': ('-ypri24_num', 'id'),
+    }
+    order_by = sort_map.get(sort2, sort_map['ypri24'])
+    return _get_table2_base_queryset(wfco_full).order_by(*order_by)
+
+
+def _get_table2_sort_links(query_type, query_val, wfco_full, page1):
+    base_params = {
+        'type': query_type,
+        'val': query_val,
+        'wfco': wfco_full,
+        'page1': page1,
+        'page2': 1,
+    }
+    return {
+        key: '?' + urlencode({**base_params, 'sort2': key})
+        for key in ('htname', 'company', 'ypri24')
+    }
+
+
+def search_view(request):
+    query_type = request.GET.get('type', 'ingr_t')
+    query_val = request.GET.get('val', '').strip()
+    wfco_full = request.GET.get('wfco', '').strip()
+    sort2 = request.GET.get('sort2', 'ypri24').strip()
+
+    table1_page = None
+    if query_val:
+        qs1 = _get_table1_queryset(query_type, query_val)
+        p1 = Paginator(qs1, PAGE_SIZE)
+        table1_page = p1.get_page(request.GET.get('page1', 1))
+
+    table2_page = None
+    table2_ypri24_total = None
+    table2_ingr_t = ''
+    if wfco_full:
+        qs2 = _get_table2_queryset(wfco_full, sort2)
+        agg = qs2.aggregate(total=Coalesce(Sum('ypri24_num'), Value(0), output_field=IntegerField()))
+        table2_ypri24_total = _format_amount(str(agg['total'])) if agg['total'] else ''
+        first_row = qs2.first()
+        if first_row:
+            table2_ingr_t = first_row.ingr_t
+        p2 = Paginator(qs2, PAGE_SIZE)
+        table2_page = p2.get_page(request.GET.get('page2', 1))
+        for row in table2_page.object_list:
+            row.ypri24_display = _format_amount(row.ypri24)
+
+    auto_focus = ''
+    if wfco_full:
+        auto_focus = 'table2-section'
+
+    return render(request, 'equiv_ingr/search.html', {
+        'query_type': query_type,
+        'query_val': query_val,
+        'table1_page': table1_page,
+        'table2_page': table2_page,
+        'table2_ypri24_total': table2_ypri24_total,
+        'table2_ingr_t': table2_ingr_t,
+        'table2_sort_links': _get_table2_sort_links(query_type, query_val, wfco_full, request.GET.get('page1', 1)),
+        'wfco_full': wfco_full,
+        'sort2': sort2,
+        'auto_focus': auto_focus,
+    })
+
+
+def druginfo_detail(request):
+    """
+    di 버튼 클릭 시 medicines_druginfo 테이블에서 의약정보를 조회하여 JSON 반환.
+    ?htname=... 파라미터로 검색
+    """
+    htname = request.GET.get('htname', '').strip()
+    if not htname:
+        return JsonResponse({'results': []})
+
+    rows = MedicinesDruginfo.objects.filter(htname=htname)
+    results = []
+    for row in rows:
+        results.append({
+            'htname': row.htname,
+            'ingr_t': row.ingr_t,
+            'sthunite_t': row.sthunite_t,
+            'ypri24': _format_amount(row.ypri24),
+            'company': row.company,
+            'kfregcd': row.kfregcd,
+            'ee': row.ee,
+            'ud': row.ud,
+            'nb': row.nb,
+        })
+    return JsonResponse({'results': results})
