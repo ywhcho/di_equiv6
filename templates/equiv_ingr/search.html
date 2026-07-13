@@ -101,9 +101,9 @@
     &nbsp;<small style="font-size:13px;color:#6c757d;">wfco: <strong>{{ wfco_full }}</strong></small>
     {% if table2_ypri24_total %}&nbsp;<small style="font-size:13px;color:#6c757d;">연생산실적 합계: <strong>{{ table2_ypri24_total }}</strong></small>{% endif %}
   </h3>
-  {% if table2_ingred %}
+  {% if table2_ingr_t %}
   <p style="font-size:12px;color:#495057;margin:0 0 6px;">
-    <strong>성분명:</strong> {{ table2_ingred|truncatechars:40 }}
+    <strong>성분명:</strong> {{ table2_ingr_t|truncatechars:40 }}
   </p>
   {% endif %}
   {% if table2_page.object_list %}
