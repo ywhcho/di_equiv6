@@ -452,10 +452,60 @@ function escHtml(str) {
 
 function formatDiValue(key, str) {
   if (key === 'ud_html' || key === 'nb_html') {
-    return String(str || '').trim() || '-';
+    return sanitizeDiHtml(str);
   }
   var text = String(str || '').trim() || '-';
   return escHtml(text).replace(/\r\n|\r|\n/g, '<br>');
+}
+
+function sanitizeDiHtml(str) {
+  var raw = String(str || '').trim();
+  if (!raw) {
+    return '-';
+  }
+  var allowedTags = {
+    A: ['href', 'target', 'rel'],
+    B: [], BR: [], DIV: [], EM: [], I: [], LI: [], OL: [], P: [],
+    SPAN: [], STRONG: [], SUB: [], SUP: [], TABLE: [], TBODY: [],
+    TD: ['colspan', 'rowspan'], TH: ['colspan', 'rowspan'], THEAD: [],
+    TR: [], U: [], UL: []
+  };
+  var template = document.createElement('template');
+  template.innerHTML = raw;
+  var wrapper = document.createElement('div');
+
+  function appendSafe(node, parent) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      parent.appendChild(document.createTextNode(node.textContent || ''));
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return;
+    }
+    var tagName = node.tagName.toUpperCase();
+    if (!allowedTags[tagName]) {
+      Array.prototype.forEach.call(node.childNodes, function(child) {
+        appendSafe(child, parent);
+      });
+      return;
+    }
+    var safeNode = document.createElement(tagName.toLowerCase());
+    allowedTags[tagName].forEach(function(attr) {
+      if (node.hasAttribute(attr)) {
+        safeNode.setAttribute(attr, node.getAttribute(attr));
+      }
+    });
+    Array.prototype.forEach.call(node.childNodes, function(child) {
+      appendSafe(child, safeNode);
+    });
+    parent.appendChild(safeNode);
+  }
+
+  Array.prototype.forEach.call(template.content.childNodes, function(child) {
+    appendSafe(child, wrapper);
+  });
+
+  return wrapper.innerHTML || '-';
 }
 
 /* DI 버튼 클릭 이벤트 (이벤트 위임) */

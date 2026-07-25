@@ -37,11 +37,14 @@ class SafeHtmlRenderer(HTMLParser):
         if tag == 'br':
             self.parts.append('<br>')
             return
+        if tag not in SAFE_HTML_TAGS:
+            return
         self.handle_starttag(tag, attrs)
         self.handle_endtag(tag)
 
     def handle_data(self, data):
-        self.parts.append(escape(data).replace('\n', '<br>'))
+        normalized = data.replace('\r\n', '\n').replace('\r', '\n')
+        self.parts.append(escape(normalized).replace('\n', '<br>'))
 
     def get_html(self):
         return ''.join(self.parts)
