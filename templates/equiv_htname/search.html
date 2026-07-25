@@ -454,7 +454,8 @@ function formatDiValue(key, str) {
   if (key === 'ud_html' || key === 'nb_html') {
     return String(str || '').trim() || '-';
   }
-  return escHtml(str || '-').replace(/\r\n|\r|\n/g, '<br>');
+  var text = String(str || '').trim() || '-';
+  return escHtml(text).replace(/\r\n|\r|\n/g, '<br>');
 }
 
 /* DI 버튼 클릭 이벤트 (이벤트 위임) */

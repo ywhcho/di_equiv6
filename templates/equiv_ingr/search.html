@@ -270,7 +270,8 @@ function formatDiValue(key, str) {
   if (key === 'ud_html' || key === 'nb_html') {
     return String(str || '').trim() || '-';
   }
-  return escHtml(str || '-').replace(/\r\n|\r|\n/g, '<br>');
+  var text = String(str || '').trim() || '-';
+  return escHtml(text).replace(/\r\n|\r|\n/g, '<br>');
 }
 
 document.addEventListener('click', function(e) {
