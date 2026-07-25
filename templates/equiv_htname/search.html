@@ -492,7 +492,17 @@ function sanitizeDiHtml(str) {
     var safeNode = document.createElement(tagName.toLowerCase());
     allowedTags[tagName].forEach(function(attr) {
       if (node.hasAttribute(attr)) {
-        safeNode.setAttribute(attr, node.getAttribute(attr));
+        var value = node.getAttribute(attr);
+        if (tagName === 'A' && attr === 'href' && !isSafeHref(value)) {
+          return;
+        }
+        if (tagName === 'A' && attr === 'target' && ['_blank', '_self'].indexOf(value) === -1) {
+          return;
+        }
+        if (tagName === 'A' && attr === 'rel' && ['noopener', 'noreferrer', 'noopener noreferrer'].indexOf(value) === -1) {
+          return;
+        }
+        safeNode.setAttribute(attr, value);
       }
     });
     Array.prototype.forEach.call(node.childNodes, function(child) {
@@ -506,6 +516,17 @@ function sanitizeDiHtml(str) {
   });
 
   return wrapper.innerHTML || '-';
+}
+
+function isSafeHref(value) {
+  var text = String(value || '').trim();
+  if (!text) {
+    return false;
+  }
+  if (text.charAt(0) === '/' || text.charAt(0) === '#') {
+    return true;
+  }
+  return /^(https?:|mailto:)/i.test(text);
 }
 
 /* DI 버튼 클릭 이벤트 (이벤트 위임) */

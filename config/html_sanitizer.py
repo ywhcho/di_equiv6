@@ -1,5 +1,6 @@
 from html import escape
 from html.parser import HTMLParser
+from urllib.parse import urlparse
 
 
 SAFE_HTML_TAGS = {
@@ -14,6 +15,20 @@ SAFE_HTML_ATTRS = {
 }
 
 
+def _normalize_newlines(value):
+    return value.replace('\r\n', '\n').replace('\r', '\n')
+
+
+def _is_safe_href(value):
+    text = str(value or '').strip()
+    if not text:
+        return False
+    if text.startswith(('/', '#')):
+        return True
+    scheme = urlparse(text).scheme.lower()
+    return scheme in {'http', 'https', 'mailto'}
+
+
 class SafeHtmlRenderer(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -25,6 +40,14 @@ class SafeHtmlRenderer(HTMLParser):
         safe_attrs = []
         allowed_attrs = SAFE_HTML_ATTRS.get(tag, set())
         for name, value in attrs:
+            if name not in allowed_attrs:
+                continue
+            if tag == 'a' and name == 'href' and not _is_safe_href(value):
+                continue
+            if tag == 'a' and name == 'target' and value not in {'_blank', '_self'}:
+                continue
+            if tag == 'a' and name == 'rel' and value not in {'noopener', 'noreferrer', 'noopener noreferrer'}:
+                continue
             if name in allowed_attrs:
                 safe_attrs.append(f' {name}="{escape(value or "", quote=True)}"')
         self.parts.append(f'<{tag}{"".join(safe_attrs)}>')
@@ -43,7 +66,7 @@ class SafeHtmlRenderer(HTMLParser):
         self.handle_endtag(tag)
 
     def handle_data(self, data):
-        normalized = data.replace('\r\n', '\n').replace('\r', '\n')
+        normalized = _normalize_newlines(data)
         self.parts.append(escape(normalized).replace('\n', '<br>'))
 
     def get_html(self):
@@ -55,7 +78,7 @@ def sanitize_html(value):
     if not text:
         return ''
     if '<' not in text and '>' not in text:
-        return escape(text).replace('\r\n', '\n').replace('\r', '\n').replace('\n', '<br>')
+        return escape(_normalize_newlines(text)).replace('\n', '<br>')
     parser = SafeHtmlRenderer()
     parser.feed(text)
     parser.close()
