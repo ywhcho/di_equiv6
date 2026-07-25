@@ -315,7 +315,7 @@ function sanitizeDiHtml(str) {
         if (tagName === 'A' && attr === 'target' && ['_blank', '_self'].indexOf(value) === -1) {
           return;
         }
-        if (tagName === 'A' && attr === 'rel' && ['noopener', 'noreferrer', 'noopener noreferrer'].indexOf(value) === -1) {
+        if (tagName === 'A' && attr === 'rel' && !isSafeRel(value)) {
           return;
         }
         safeNode.setAttribute(attr, value);
@@ -343,6 +343,16 @@ function isSafeHref(value) {
     return true;
   }
   return /^(https?:|mailto:)/i.test(text);
+}
+
+function isSafeRel(value) {
+  var tokens = String(value || '').trim().split(/\s+/).filter(Boolean);
+  if (!tokens.length) {
+    return false;
+  }
+  return tokens.every(function(token) {
+    return token === 'noopener' || token === 'noreferrer';
+  });
 }
 
 document.addEventListener('click', function(e) {

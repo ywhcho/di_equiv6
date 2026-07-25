@@ -29,6 +29,11 @@ def _is_safe_href(value):
     return scheme in {'http', 'https', 'mailto'}
 
 
+def _is_safe_rel(value):
+    tokens = [token for token in str(value or '').split() if token]
+    return bool(tokens) and all(token in {'noopener', 'noreferrer'} for token in tokens)
+
+
 class SafeHtmlRenderer(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -46,10 +51,9 @@ class SafeHtmlRenderer(HTMLParser):
                 continue
             if tag == 'a' and name == 'target' and value not in {'_blank', '_self'}:
                 continue
-            if tag == 'a' and name == 'rel' and value not in {'noopener', 'noreferrer', 'noopener noreferrer'}:
+            if tag == 'a' and name == 'rel' and not _is_safe_rel(value):
                 continue
-            if name in allowed_attrs:
-                safe_attrs.append(f' {name}="{escape(value or "", quote=True)}"')
+            safe_attrs.append(f' {name}="{escape(value or "", quote=True)}"')
         self.parts.append(f'<{tag}{"".join(safe_attrs)}>')
 
     def handle_endtag(self, tag):
