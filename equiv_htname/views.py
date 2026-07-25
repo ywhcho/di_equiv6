@@ -49,6 +49,14 @@ def _set_ypri24_display(page):
         row.ypri24_display = _ypri24_display(row.ypri24)
 
 
+def _druginfo_ypri24_display(ypri24, canc_date):
+    base_display = _ypri24_display(ypri24)
+    canc_date_text = str(canc_date or '').strip()
+    if canc_date_text:
+        return f'{base_display}(-사용종료일: {canc_date_text})'
+    return f'{base_display}(-)'
+
+
 # 검색 타입 정의: (필드 조회식, 표시명)
 # ATC만 startswith, 나머지는 icontains
 SEARCH_TYPES = {
@@ -184,11 +192,11 @@ def druginfo_detail(request):
             'htname': row.htname,
             'ingr_t': row.ingr_t,
             'sthunite_t': row.sthunite_t,
-            'ypri24': _ypri24_display(row.ypri24),
+            'ypri24': _druginfo_ypri24_display(row.ypri24, row.canc_date),
             'company': row.company,
             'kfregcd': row.kfregcd,
             'ee': row.ee,
-            'ud': row.ud,
-            'nb': row.nb,
+            'ud_html': row.ud,
+            'nb_html': row.nb,
         })
     return JsonResponse({'results': results})

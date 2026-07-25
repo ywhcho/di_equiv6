@@ -423,8 +423,8 @@ function renderDiModal(results) {
     ['회사명',       'company'],
     ['품목기준코드', 'kfregcd'],
     ['효능',         'ee'],
-    ['용량',         'ud'],
-    ['주의사항',     'nb'],
+    ['용량',         'ud_html'],
+    ['주의사항',     'nb_html'],
   ];
   results.forEach(function(row, idx) {
     if (idx > 0) { html += '<hr class="di-record-sep">'; }
@@ -435,7 +435,7 @@ function renderDiModal(results) {
     labels.forEach(function(pair) {
       var label = pair[0], key = pair[1];
       var val = row[key] || '';
-      html += '<tr><th>' + escHtml(label) + '</th><td>' + formatDiValue(val) + '</td></tr>';
+      html += '<tr><th>' + escHtml(label) + '</th><td>' + formatDiValue(key, val) + '</td></tr>';
     });
     html += '</table>';
   });
@@ -450,8 +450,11 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-function formatDiValue(str) {
-  return escHtml(str).replace(/\r\n|\r|\n/g, '<br>');
+function formatDiValue(key, str) {
+  if (key === 'ud_html' || key === 'nb_html') {
+    return String(str || '').trim() || '-';
+  }
+  return escHtml(str || '-').replace(/\r\n|\r|\n/g, '<br>');
 }
 
 /* DI 버튼 클릭 이벤트 (이벤트 위임) */

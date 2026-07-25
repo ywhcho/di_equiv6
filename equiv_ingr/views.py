@@ -23,6 +23,21 @@ def _format_amount(value):
         return text
 
 
+def _ypri24_display(value):
+    formatted = _format_amount(value)
+    if not formatted or formatted == '0':
+        return '-'
+    return formatted
+
+
+def _druginfo_ypri24_display(ypri24, canc_date):
+    base_display = _ypri24_display(ypri24)
+    canc_date_text = str(canc_date or '').strip()
+    if canc_date_text:
+        return f'{base_display}(-사용종료일: {canc_date_text})'
+    return f'{base_display}(-)'
+
+
 def _get_table1_queryset(query_type, query_val):
     filter_map = {
         'ingr_t': 'ingr_t__icontains',
@@ -93,7 +108,7 @@ def search_view(request):
         p2 = Paginator(qs2, PAGE_SIZE)
         table2_page = p2.get_page(request.GET.get('page2', 1))
         for row in table2_page.object_list:
-            row.ypri24_display = _format_amount(row.ypri24)
+            row.ypri24_display = _ypri24_display(row.ypri24)
 
     auto_focus = ''
     if wfco_full:
@@ -129,11 +144,11 @@ def druginfo_detail(request):
             'htname': row.htname,
             'ingr_t': row.ingr_t,
             'sthunite_t': row.sthunite_t,
-            'ypri24': _format_amount(row.ypri24),
+            'ypri24': _druginfo_ypri24_display(row.ypri24, row.canc_date),
             'company': row.company,
             'kfregcd': row.kfregcd,
             'ee': row.ee,
-            'ud': row.ud,
-            'nb': row.nb,
+            'ud_html': row.ud,
+            'nb_html': row.nb,
         })
     return JsonResponse({'results': results})

@@ -51,6 +51,7 @@ class MedicinesDruginfo(models.Model):
     ingr_t = models.CharField('성분명', max_length=500, blank=True, default='')
     sthunite_t = models.CharField('함량', max_length=255, blank=True, default='')
     ypri24 = models.CharField('연생산액', max_length=50, blank=True, default='')
+    canc_date = models.CharField('사용종료일', max_length=50, blank=True, default='')
     company = models.CharField('회사명', max_length=255, blank=True, default='')
     kfregcd = models.CharField('품목기준코드', max_length=50, blank=True, default='')
     ee = models.TextField('효능', blank=True, default='')
